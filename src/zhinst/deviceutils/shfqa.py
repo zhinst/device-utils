@@ -125,6 +125,8 @@ class SHFQA:
                                  e.g. "channel0_signal_input"
 
             trigger_input (str): specifies the trigger source of the scope acquisition
+                                 - if set to None, the self-triggering mode of the scope becomes
+                                   active, which is useful e.g. for the GUI.
 
             num_segments (int): number of distinct scope shots to be returned after ending the
                                 acquisition
@@ -164,10 +166,15 @@ class SHFQA:
             )
 
         self._daq.setDouble(f"/{self._device_id}/scopes/0/trigger/delay", trigger_delay)
-        self._daq.setString(
-            f"/{self._device_id}/scopes/0/trigger/channel",
-            trigger_input,
-        )
+
+        if trigger_input is not None:
+            self._daq.setString(
+                f"/{self._device_id}/scopes/0/trigger/channel",
+                trigger_input,
+            )
+            self._daq.setInt(f"/{self._device_id}/scopes/0/trigger/enable", 1)
+        else:
+            self._daq.setInt(f"/{self._device_id}/scopes/0/trigger/enable", 0)
 
         self._daq.setInt(f"/{self._device_id}/scopes/0/length", num_samples)
 
