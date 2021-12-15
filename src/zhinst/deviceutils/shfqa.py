@@ -348,6 +348,9 @@ def start_continuous_sw_trigger(
     daq, device_id: str, num_triggers: int, wait_time: float
 ) -> None:
     """Issues a specified number of software triggers with a certain wait time in between.
+    The function guarantees reception and proper processing of all triggers by the device,
+    but the time between triggers is non-deterministic by nature of software triggering.
+    Only use this function for prototyping and/or cases without strong timing requirements.
 
     Arguments:
 
@@ -366,7 +369,9 @@ def start_continuous_sw_trigger(
     min_wait_time = 0.02
     wait_time = max(min_wait_time, wait_time)
     for _ in range(num_triggers):
-        daq.setInt(f"/{device_id}/system/swtriggers/0/single", 1)
+        # syncSetInt() is a blocking call with non-deterministic execution time that
+        # imposes a minimum time between two software triggers.
+        daq.syncSetInt(f"/{device_id}/system/swtriggers/0/single", 1)
         time.sleep(wait_time)
 
 
