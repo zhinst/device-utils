@@ -5,7 +5,7 @@ Zurich Instruments LabOne Python API Utility functions for SHFQA.
 import time
 import numpy as np
 
-from zhinst.utils import assert_node_changes_to_expected_value
+from zhinst.utils import wait_for_state_change
 
 
 SHFQA_MAX_SIGNAL_GENERATOR_WAVEFORM_LENGTH = 4 * 2 ** 10
@@ -36,7 +36,12 @@ def max_qubits_per_channel(daq, device_id) -> int:
 
 
 def load_sequencer_program(
-    daq, device_id: str, channel_index: int, sequencer_program: str, awg_module=None
+    daq,
+    device_id: str,
+    channel_index: int,
+    sequencer_program: str,
+    awg_module=None,
+    timeout: float = 10,
 ) -> None:
     """Compiles and loads a program to a specified sequencer.
 
@@ -56,17 +61,21 @@ def load_sequencer_program(
       awg_module (AwgModule): awg module instance used to interact with the sequencer. If none
                               is provided, a new local instance will be created
 
+      timeout (float): maximum time to wait for the compilation on the device in seconds
+
     """
 
     # start by resetting the sequencer
-    daq.setInt(
+    daq.syncSetInt(
         f"/{device_id}/qachannels/{channel_index}/generator/reset",
         1,
     )
-    daq.sync()
-
-    timeout_compile = 10
-    timeout_ready = 10
+    wait_for_state_change(
+        daq,
+        f"/{device_id}/qachannels/{channel_index}/generator/ready",
+        0,
+        timeout=timeout,
+    )
 
     if awg_module is None:
         awg_module = daq.awgModule()
@@ -81,7 +90,7 @@ def load_sequencer_program(
     # start the compilation and upload
     compiler_status = awg_module.getInt("compiler/status")
     while compiler_status == -1 and not timeout_occurred:
-        if time.time() - t_start > timeout_compile:
+        if time.time() - t_start > timeout:
             # a timeout occurred
             timeout_occurred = True
             break
@@ -103,7 +112,7 @@ def load_sequencer_program(
         elif timeout_occurred:
             raise RuntimeError(
                 f"Timeout during program compilation for channel {channel_index} after \
-                    {timeout_compile} s,\n"
+                    {timeout} s,\n"
                 + statusstring
             )
         else:
@@ -113,14 +122,12 @@ def load_sequencer_program(
             )
 
     # wait until the device becomes ready after program upload
-    assert_node_changes_to_expected_value(
+    wait_for_state_change(
         daq,
         f"/{device_id}/qachannels/{channel_index}/generator/ready",
         1,
-        sleep_time=0.1,
-        max_repetitions=int(timeout_ready / 0.1),
+        timeout=timeout,
     )
-    time.sleep(0.1)
 
 
 def configure_scope(
@@ -164,42 +171,39 @@ def configure_scope(
                              acquisition and reception of a trigger
 
     """
+    scope_path = f"/{device_id}/scopes/0/"
+    settings = []
 
-    daq.setInt(f"/{device_id}/scopes/0/segments/count", num_segments)
+    settings.append((scope_path + "segments/count", num_segments))
     if num_segments > 1:
-        daq.setInt(f"/{device_id}/scopes/0/segments/enable", 1)
+        settings.append((scope_path + "segments/enable", 1))
     else:
-        daq.setInt(f"/{device_id}/scopes/0/segments/enable", 0)
+        settings.append((scope_path + "segments/enable", 0))
 
     if num_averages > 1:
-        daq.setInt(f"/{device_id}/scopes/0/averaging/enable", 1)
+        settings.append((scope_path + "averaging/enable", 1))
     else:
-        daq.setInt(f"/{device_id}/scopes/0/averaging/enable", 0)
-    daq.setInt(
-        f"/{device_id}/scopes/0/averaging/count",
-        num_averages,
-    )
+        settings.append((scope_path + "averaging/enable", 0))
 
-    daq.setInt(f"/{device_id}/scopes/0/channels/*/enable", 0)
+    settings.append((scope_path + "averaging/count", num_averages))
+
+    settings.append((scope_path + "channels/*/enable", 0))
     for channel, selected_input in input_select.items():
-        daq.setString(
-            f"/{device_id}/scopes/0/channels/{channel}/inputselect",
-            selected_input,
+        settings.append(
+            (scope_path + f"channels/{channel}/inputselect", selected_input)
         )
-        daq.setInt(f"/{device_id}/scopes/0/channels/{channel}/enable", 1)
-
-        daq.setDouble(f"/{device_id}/scopes/0/trigger/delay", trigger_delay)
+        settings.append((scope_path + f"channels/{channel}/enable", 1))
+        settings.append((scope_path + "trigger/delay", trigger_delay))
 
         if trigger_input is not None:
-            daq.setString(
-                f"/{device_id}/scopes/0/trigger/channel",
-                trigger_input,
-            )
-            daq.setInt(f"/{device_id}/scopes/0/trigger/enable", 1)
+            settings.append((scope_path + "trigger/channel", trigger_input))
+            settings.append((scope_path + "trigger/enable", 1))
         else:
-            daq.setInt(f"/{device_id}/scopes/0/trigger/enable", 0)
+            settings.append((scope_path + "trigger/enable", 0))
 
-    daq.setInt(f"/{device_id}/scopes/0/length", num_samples)
+    settings.append((scope_path + "length", num_samples))
+
+    daq.set(settings)
 
 
 def get_scope_data(daq, device_id: str, time_out: float = 1.0) -> tuple:
@@ -229,15 +233,7 @@ def get_scope_data(daq, device_id: str, time_out: float = 1.0) -> tuple:
     """
 
     # wait until scope has been triggered
-    sleep_time = 0.005
-    num_loops = int(time_out / sleep_time)
-    assert_node_changes_to_expected_value(
-        daq,
-        f"/{device_id}/scopes/0/enable",
-        0,
-        sleep_time=sleep_time,
-        max_repetitions=num_loops,
-    )
+    wait_for_state_change(daq, f"/{device_id}/scopes/0/enable", 0, timeout=time_out)
 
     # read and post-process the recorded data
     recorded_data = [[], [], [], []]
@@ -288,15 +284,13 @@ def enable_sequencer(daq, device_id: str, channel_index: int, single: int) -> No
                     0 - restart sequencer after finishing execution
 
     """
-
+    generator_path = f"/{device_id}/qachannels/{channel_index}/generator/"
     daq.setInt(
-        f"/{device_id}/qachannels/{channel_index}/generator/single",
+        generator_path + "single",
         single,
     )
-
-    enable_path = f"/{device_id}/qachannels/{channel_index}/generator/enable"
-    daq.setInt(enable_path, 1)
-    assert_node_changes_to_expected_value(daq, enable_path, 1)
+    daq.syncSetInt(generator_path + "enable", 1)
+    wait_for_state_change(daq, generator_path + "enable", 1)
 
 
 def write_to_waveform_memory(
@@ -328,20 +322,17 @@ def write_to_waveform_memory(
 
     """
     waveforms_path = f"/{device_id}/qachannels/{channel_index}/generator/waveforms/"
+    settings = []
 
     if clear_existing:
         empty_waveform = np.array([], dtype="complex128")
         for slot in range(0, max_qubits_per_channel(daq, device_id)):
-            daq.setVector(
-                waveforms_path + f"{slot}/wave",
-                empty_waveform,
-            )
+            settings.append((waveforms_path + f"{slot}/wave", empty_waveform))
 
     for slot, waveform in waveforms.items():
-        daq.setVector(
-            waveforms_path + f"{slot}/wave",
-            waveform,
-        )
+        settings.append((waveforms_path + f"{slot}/wave", waveform))
+
+    daq.set(settings)
 
 
 def start_continuous_sw_trigger(
@@ -393,9 +384,10 @@ def enable_scope(daq, device_id: str, single: int) -> None:
 
     path = f"/{device_id}/scopes/0/enable"
     if daq.getInt(path) == 1:
-        daq.setInt(path, 0)
-        assert_node_changes_to_expected_value(daq, path, 0)
+        daq.syncSetInt(path, 0)
+        wait_for_state_change(daq, path, 0)
     daq.syncSetInt(path, 1)
+    wait_for_state_change(daq, path, 1)
 
 
 def configure_weighted_integration(
@@ -435,22 +427,25 @@ def configure_weighted_integration(
     assert len(weights) > 0, "'weights' cannot be empty."
 
     integration_path = f"/{device_id}/qachannels/{channel_index}/readout/integration/"
+    settings = []
 
     if clear_existing:
         zero_weight = np.zeros(
             (SHFQA_MAX_SIGNAL_GENERATOR_WAVEFORM_LENGTH,), dtype="complex128"
         )
         for integration_unit in range(0, max_qubits_per_channel(daq, device_id)):
-            daq.setVector(
-                integration_path + f"weights/{integration_unit}/wave", zero_weight
+            settings.append(
+                (integration_path + f"weights/{integration_unit}/wave", zero_weight)
             )
 
     for integration_unit, weight in weights.items():
-        daq.setVector(integration_path + f"weights/{integration_unit}/wave", weight)
+        settings.append((integration_path + f"weights/{integration_unit}/wave", weight))
 
     integration_length = len(weights[0])
-    daq.setInt(integration_path + "length", integration_length)
-    daq.setDouble(integration_path + "delay", integration_delay)
+    settings.append((integration_path + "length", integration_length))
+    settings.append((integration_path + "delay", integration_delay))
+
+    daq.set(settings)
 
 
 def configure_result_logger_for_spectroscopy(
@@ -484,9 +479,13 @@ def configure_result_logger_for_spectroscopy(
     """
 
     result_path = f"/{device_id}/qachannels/{channel_index}/spectroscopy/result/"
-    daq.setInt(result_path + "length", result_length)
-    daq.setInt(result_path + "averages", num_averages)
-    daq.setInt(result_path + "mode", averaging_mode)
+    settings = []
+
+    settings.append((result_path + "length", result_length))
+    settings.append((result_path + "averages", num_averages))
+    settings.append((result_path + "mode", averaging_mode))
+
+    daq.set(settings)
 
 
 def configure_result_logger_for_readout(
@@ -525,10 +524,14 @@ def configure_result_logger_for_readout(
     """
 
     result_path = f"/{device_id}/qachannels/{channel_index}/readout/result/"
-    daq.setInt(result_path + "length", result_length)
-    daq.setInt(result_path + "averages", num_averages)
-    daq.setString(result_path + "source", result_source)
-    daq.setInt(result_path + "mode", averaging_mode)
+    settings = []
+
+    settings.append((result_path + "length", result_length))
+    settings.append((result_path + "averages", num_averages))
+    settings.append((result_path + "source", result_source))
+    settings.append((result_path + "mode", averaging_mode))
+
+    daq.set(settings)
 
 
 def enable_result_logger(daq, device_id: str, channel_index: int, mode: str) -> None:
@@ -552,10 +555,10 @@ def enable_result_logger(daq, device_id: str, channel_index: int, mode: str) -> 
     enable_path = f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable"
     # reset the result logger if some old measurement is still running
     if daq.getInt(enable_path) != 0:
-        daq.setInt(enable_path, 0)
-        assert_node_changes_to_expected_value(daq, enable_path, 0)
-    daq.setInt(enable_path, 1)
-    assert_node_changes_to_expected_value(daq, enable_path, 1)
+        daq.syncSetInt(enable_path, 0)
+        wait_for_state_change(daq, enable_path, 0)
+    daq.syncSetInt(enable_path, 1)
+    wait_for_state_change(daq, enable_path, 1)
 
 
 def get_result_logger_data(
@@ -584,16 +587,12 @@ def get_result_logger_data(
 
     """
 
-    sleep_time = 0.05
-    num_loops = int(time_out / sleep_time)
-    assert_node_changes_to_expected_value(
+    wait_for_state_change(
         daq,
         f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable",
         0,
-        sleep_time=sleep_time,
-        max_repetitions=num_loops,
+        timeout=time_out,
     )
-    daq.sync()
 
     data = daq.get(
         f"/{device_id}/qachannels/{channel_index}/{mode}/result/data/*/wave",
@@ -636,13 +635,14 @@ def configure_channel(
     """
 
     path = f"/{device_id}/qachannels/{channel_index}/"
+    settings = []
 
-    daq.setInt(path + "input/range", input_range)
-    daq.setInt(path + "output/range", output_range)
+    settings.append((path + "input/range", input_range))
+    settings.append((path + "output/range", output_range))
+    settings.append((path + "centerfreq", center_frequency))
+    settings.append((path + "mode", mode))
 
-    daq.setDouble(path + "centerfreq", center_frequency)
-
-    daq.setString(path + "mode", mode)
+    daq.set(settings)
 
 
 def configure_sequencer_triggering(
