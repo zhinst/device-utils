@@ -6,6 +6,7 @@ __pycache__/
 # Distribution / packaging
 dist/
 *.egg-info/
+_version.py
 
 #db, web
 .DS_Store
