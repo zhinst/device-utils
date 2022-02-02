@@ -4,8 +4,7 @@ Zurich Instruments LabOne Python API Utility functions for SHFSG.
 
 import time
 
-from zhinst.utils import wait_for_state_change
-from zhinst.utils import convert_awg_waveform
+from zhinst.utils import convert_awg_waveform, wait_for_state_change
 
 SHFSG_MAX_SIGNAL_GENERATOR_WAVEFORM_LENGTH = 98304
 SHFSG_SAMPLING_FREQUENCY = 2e9

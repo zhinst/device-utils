@@ -3,10 +3,9 @@ Zurich Instruments LabOne Python API Utility functions for SHFQA.
 """
 
 import time
+
 import numpy as np
-
 from zhinst.utils import wait_for_state_change
-
 
 SHFQA_MAX_SIGNAL_GENERATOR_WAVEFORM_LENGTH = 4 * 2 ** 10
 SHFQA_MAX_SIGNAL_GENERATOR_CARRIER_COUNT = 16

@@ -5,5 +5,3 @@ control. Based on the native interface to zhinst-ziPython,
 they offer an easy and user-friendly way to control Zurich Instruments
 devices.
 """
-
-from zhinst.deviceutils.shfqa import *
