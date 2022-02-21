@@ -15,7 +15,6 @@ def load_sequencer_program(
     device_id: str,
     channel_index: int,
     sequencer_program: str,
-    command_table: str = None,
     awg_module=None,
     timeout: float = 10,
 ) -> None:
@@ -29,7 +28,6 @@ def load_sequencer_program(
         channel_index (int): index specifying which sequencer to enable - there
             is one sequencer per channel
         sequencer_program (str): sequencer program to be uploaded
-        command_table (str): command table to be uploaded. (default = None)
         awg_module (AwgModule): awg module instance used to interact with the
             sequencer. If none is provided, a new local instance will be
             created. (default = None)
@@ -100,19 +98,12 @@ def load_sequencer_program(
         timeout=timeout,
     )
 
-    # upload command table after sequencer upload has finished
-    if command_table is not None:
-        daq.setVector(
-            f"/{device_id}/sgchannels/{channel_index}/awg/commandtable/data",
-            command_table,
-        )
-
 
 def enable_sequencer(
     daq,
     device_id: str,
     channel_index: int,
-    single: int,
+    single: int = 1,
 ) -> None:
     """Starts the sequencer of a specific channel.
 
@@ -133,6 +124,29 @@ def enable_sequencer(
     )
     daq.syncSetInt(sequencer_path + "enable", 1)
     wait_for_state_change(daq, sequencer_path + "enable", 1)
+
+
+def upload_commandtable(
+    daq,
+    device_id: str,
+    channel_index: int,
+    command_table: str,
+) -> None:
+    """Uploads a command table in the form of a string to the appropriate channel
+
+    Args:
+        daq (ziDAQServer): instance of a Zurich Instruments API session
+            connected to a Data Server. The device with identifier device_id is
+            assumed to already be connected to this instance.
+        device_id (str): SHFSG device identifier, e.g. `dev12050` or'shf-dev12050'
+        channel_index (int): index specifying which channel to upload the command table to
+        command_table (str): the command table to be uploaded
+    """
+    # upload command table
+    daq.setVector(
+        f"/{device_id}/sgchannels/{channel_index}/awg/commandtable/data",
+        command_table,
+    )
 
 
 def write_to_waveform_memory(
@@ -262,7 +276,7 @@ def configure_pulse_modulation(
     device_id: str,
     channel_index: int,
     enable: int,
-    osc_index: int,
+    osc_index: int = 0,
     osc_frequency: float = 100e6,
     phase: float = 0.0,
     global_amp: float = 0.5,
@@ -314,7 +328,7 @@ def configure_sine_generation(
     device_id: str,
     channel_index: int,
     enable: int,
-    osc_index: int,
+    osc_index: int = 0,
     osc_frequency: float = 100e6,
     phase: float = 0.0,
     gains: tuple = (0.0, 1.0, 1.0, 0.0),
