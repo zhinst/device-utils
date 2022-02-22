@@ -50,6 +50,7 @@ def load_sequencer_program(
     )
     awg_module = daq.awgModule() if awg_module is None else awg_module
     awg_module.set("device", device_id)
+    awg_module.set("sequencertype", "sg")
     awg_module.set("index", channel_index)
     awg_module.execute()
 

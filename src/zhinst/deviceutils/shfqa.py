@@ -72,6 +72,7 @@ def load_sequencer_program(
     if awg_module is None:
         awg_module = daq.awgModule()
     awg_module.set("device", device_id)
+    awg_module.set("sequencertype", "qa")
     awg_module.set("index", channel_index)
     awg_module.execute()
 
