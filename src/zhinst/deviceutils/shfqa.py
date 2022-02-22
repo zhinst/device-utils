@@ -291,16 +291,14 @@ def write_to_waveform_memory(
         clear_existing: Specify whether to clear the waveform memory before the
             present upload.
     """
-    waveforms_path = f"/{device_id}/qachannels/{channel_index}/generator/waveforms/"
-    settings = []
+    generator_path = f"/{device_id}/qachannels/{channel_index}/generator/"
 
     if clear_existing:
-        empty_waveform = np.array([], dtype="complex128")
-        for slot in range(0, max_qubits_per_channel(daq, device_id)):
-            settings.append((waveforms_path + f"{slot}/wave", empty_waveform))
+        daq.syncSetInt(generator_path + "clearwave", 1)
 
+    settings = []
     for slot, waveform in waveforms.items():
-        settings.append((waveforms_path + f"{slot}/wave", waveform))
+        settings.append((generator_path + f"waveforms/{slot}/wave", waveform))
 
     daq.set(settings)
 
@@ -389,16 +387,11 @@ def configure_weighted_integration(
     assert len(weights) > 0, "'weights' cannot be empty."
 
     integration_path = f"/{device_id}/qachannels/{channel_index}/readout/integration/"
-    settings = []
 
     if clear_existing:
-        zero_weight = np.zeros(
-            (SHFQA_MAX_SIGNAL_GENERATOR_WAVEFORM_LENGTH,), dtype="complex128"
-        )
-        for integration_unit in range(0, max_qubits_per_channel(daq, device_id)):
-            settings.append(
-                (integration_path + f"weights/{integration_unit}/wave", zero_weight)
-            )
+        daq.syncSetInt(integration_path + "clearweight", 1)
+
+    settings = []
 
     for integration_unit, weight in weights.items():
         settings.append((integration_path + f"weights/{integration_unit}/wave", weight))
