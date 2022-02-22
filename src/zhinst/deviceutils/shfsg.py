@@ -5,33 +5,36 @@ Zurich Instruments LabOne Python API Utility functions for SHFSG.
 import time
 
 from zhinst.utils import convert_awg_waveform, wait_for_state_change
+from zhinst.ziPython import AwgModule, ziDAQServer
 
 SHFSG_MAX_SIGNAL_GENERATOR_WAVEFORM_LENGTH = 98304
 SHFSG_SAMPLING_FREQUENCY = 2e9
 
 
 def load_sequencer_program(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
     sequencer_program: str,
-    awg_module=None,
+    *,
+    awg_module: AwgModule = None,
     timeout: float = 10,
 ) -> None:
     """Compiles and loads a program to a specified AWG core.
 
     Args:
-        daq (ziDAQServer): instance of a Zurich Instruments API session
-            connected to a Data Server. The device with identifier device_id is
-            assumed to already be connected to this instance.
-        device_id (str): SHFSG device identifier, e.g. `dev12050` or'shf-dev12050'
-        channel_index (int): index specifying which sequencer to enable - there
-            is one sequencer per channel
-        sequencer_program (str): sequencer program to be uploaded
-        awg_module (AwgModule): awg module instance used to interact with the
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which sequencer to enable - there
+            is one sequencer per channel.
+        sequencer_program: Sequencer program to be uploaded.
+        awg_module: AWG module instance used to interact with the
             sequencer. If none is provided, a new local instance will be
             created. (default = None)
-        timeout (float): maximum time to wait for the compilation in seconds. (default = 10)
+        timeout: maximum time to wait for the compilation in seconds.
+            (default = 10)
     """
 
     # start by resetting the sequencer
@@ -45,9 +48,7 @@ def load_sequencer_program(
         0,
         timeout=timeout,
     )
-
-    if awg_module is None:
-        awg_module = daq.awgModule()
+    awg_module = daq.awgModule() if awg_module is None else awg_module
     awg_module.set("device", device_id)
     awg_module.set("index", channel_index)
     awg_module.execute()
@@ -100,34 +101,34 @@ def load_sequencer_program(
 
 
 def enable_sequencer(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
-    single: int = 1,
+    *,
+    single: bool = True,
 ) -> None:
     """Starts the sequencer of a specific channel.
 
     Args:
-        daq (ziDAQServer): instance of a Zurich Instruments API session
-            connected to a Data Server. The device with identifier device_id is
-            assumed to already be connected to this instance.
-        device_id (str): SHFSG device identifier, e.g. `dev12050` or'shf-dev12050'
-        channel_index (int): index specifying which sequencer to enable - there
-            is one sequencer per channel
-        single (int): 1 - disable sequencer after finishing execution
-                      0 - restart sequencer after finishing execution
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which sequencer to enable - there
+            is one sequencer per channel.
+        single: Flag if the sequencer should run in single mode.
     """
     sequencer_path = f"/{device_id}/sgchannels/{channel_index}/awg/"
     daq.setInt(
         sequencer_path + "single",
-        single,
+        int(single),
     )
     daq.syncSetInt(sequencer_path + "enable", 1)
     wait_for_state_change(daq, sequencer_path + "enable", 1)
 
 
 def upload_commandtable(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
     command_table: str,
@@ -135,12 +136,13 @@ def upload_commandtable(
     """Uploads a command table in the form of a string to the appropriate channel
 
     Args:
-        daq (ziDAQServer): instance of a Zurich Instruments API session
-            connected to a Data Server. The device with identifier device_id is
-            assumed to already be connected to this instance.
-        device_id (str): SHFSG device identifier, e.g. `dev12050` or'shf-dev12050'
-        channel_index (int): index specifying which channel to upload the command table to
-        command_table (str): the command table to be uploaded
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which channel to upload the command
+            table to.
+        command_table: The command table to be uploaded.
     """
     # upload command table
     daq.setVector(
@@ -150,7 +152,7 @@ def upload_commandtable(
 
 
 def write_to_waveform_memory(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
     waveforms: dict,
@@ -158,14 +160,14 @@ def write_to_waveform_memory(
     """Writes waveforms to the waveform memory of a specified sequencer.
 
     Args:
-        daq (ziDAQServer): instance of a Zurich Instruments API session
-            connected to a Data Server. The device with identifier device_id is
-            assumed to already be connected to this instance.
-        device_id (str): SHFSG device identifier, e.g. `dev12050` or'shf-dev12050'
-        channel_index (int): index specifying which sequencer to enable - there
-            is one sequencer per channel
-        waveforms (dict): dictionary of waveforms, the key specifies the waveform index to
-            which to write the waveforms
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which sequencer to enable - there
+            is one sequencer per channel.
+        waveforms (dict): Dictionary of waveforms, the key specifies the
+            waveform index to which to write the waveforms.
 
     """
     waveforms_path = f"/{device_id}/sgchannels/{channel_index}/awg/waveform/waves/"
@@ -179,9 +181,10 @@ def write_to_waveform_memory(
 
 
 def configure_marker_and_trigger(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
+    *,
     trigger_in_source: str,
     trigger_in_slope: str,
     marker_out_source: str,
@@ -189,19 +192,19 @@ def configure_marker_and_trigger(
     """Configures the trigger inputs and marker outputs of a specified AWG core.
 
     Args:
-        daq (ziDAQServer): instance of a Zurich Instruments API session
-            connected to a Data Server. The device with identifier device_id is
-            assumed to already be connected to this instance.
-        device_id (str): SHFSG device identifier, e.g. `dev12050` or'shf-dev12050'
-        channel_index (int): index specifying which sequencer to enable - there
-            is one sequencer per channel
-        trigger_in_source (str): alias for the trigger input used by the
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'
+        channel_index: Index specifying which sequencer to enable - there
+            is one sequencer per channel.
+        trigger_in_source: Alias for the trigger input used by the
             sequencer. For a list of available values use:
             daq.help(f"/{dev_id}/sgchannels/{channel_index}/awg/auxtriggers/0/channel")
-        tringger_in_slope (str): alias for the slope of the input trigger used
+        tringger_in_slope: Alias for the slope of the input trigger used
             by sequencer. For a list of available values use
             daq.help(f"/{dev_id}/sgchannels/{channel_index}/awg/auxtriggers/0/slope")
-        marker_out_source (str): alias for the marker output source used by the
+        marker_out_source: Alias for the marker output source used by the
             sequencer. For a list of available values use
             daq.help(f"/{dev_id}/sgchannels/{channel_index}/marker/source")
     """
@@ -232,9 +235,10 @@ def configure_marker_and_trigger(
 
 
 def configure_channel(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
+    *,
     enable: int,
     output_range: int,
     center_frequency: float,
@@ -243,15 +247,15 @@ def configure_channel(
     """Configures the RF input and output of a specified channel.
 
     Args:
-        daq (ziDAQServer): instance of a Zurich Instruments API session
-            connected to a Data Server. The device with identifier device_id is
-            assumed to already be connected to this instance.
-        device_id (str): SHFSG device identifier, e.g. `dev12050` or'shf-dev12050'
-        channel_index (int): index specifying which sequencer to enable - there
-            is one sequencer per channel
-        output_range (int): maximal range of the signal output power in dbM
-        center_frequency (float): center Frequency before modulation
-        rflf_path (int): switch between RF and LF paths
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which sequencer to enable - there
+            is one sequencer per channel.
+        output_range: Maximal range of the signal output power in dbM.
+        center_frequency: Center Frequency before modulation.
+        rflf_path: Switch between RF and LF paths.
     """
 
     path = f"/{device_id}/sgchannels/{channel_index}/"
@@ -272,9 +276,10 @@ def configure_channel(
 
 
 def configure_pulse_modulation(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
+    *,
     enable: int,
     osc_index: int = 0,
     osc_frequency: float = 100e6,
@@ -283,28 +288,29 @@ def configure_pulse_modulation(
     gains: tuple = (1.0, -1.0, 1.0, 1.0),
     sine_generator_index: int = 0,
 ) -> None:
-    """Configure the pulse modulation
+    """Configure the pulse modulation.
 
     Configures the sine generator to digitally modulate the AWG output, for
-    generating single sideband AWG signals
+    generating single sideband AWG signals.
 
     Args:
-        daq (ziDAQServer): instance of a Zurich Instruments API session
-            connected to a Data Server. The device with identifier device_id is
-            assumed to already be connected to this instance.
-        device_id (str): SHFSG device identifier, e.g. `dev12050` or'shf-dev12050'
-        channel_index (int): index specifying which sequencer to enable - there
-            is one sequencer per channel
-        enable (int): enables modulation
-        osc_index (int): selects which oscillator to use
-        osc_frequency (float): oscillator frequency used to modulate the AWG
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'
+        channel_index: Index specifying which sequencer to enable - there
+            is one sequencer per channel.
+        enable: Enables modulation.
+        osc_index: Selects which oscillator to use.
+        osc_frequency: Oscillator frequency used to modulate the AWG
             outputs. (default = 100e6)
-        phase (float): sets the oscillator phase. (default = 0.0)
-        global_amp (float): global scale factor for the AWG outputs. (default = 0.5)
-        gains (tuple): sets the four amplitudes used for single sideband
+        phase: Sets the oscillator phase. (default = 0.0)
+        global_amp: Global scale factor for the AWG outputs. (default = 0.5)
+        gains: Sets the four amplitudes used for single sideband
             generation. default values correspond to upper sideband with a
             positive oscillator frequency. (default = (1.0, -1.0, 1.0, 1.0))
-        sine_generator_index (int): selects which sine generator to use on a given channel
+        sine_generator_index: Selects which sine generator to use on a given
+            channel.
     """
 
     path = f"/{device_id}/sgchannels/{channel_index}/"
@@ -324,9 +330,10 @@ def configure_pulse_modulation(
 
 
 def configure_sine_generation(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
+    *,
     enable: int,
     osc_index: int = 0,
     osc_frequency: float = 100e6,
@@ -340,23 +347,24 @@ def configure_sine_generation(
     continuous wave signals without the AWG.
 
     Args:
-        daq (ziDAQServer): instance of a Zurich Instruments API session
-            connected to a Data Server. The device with identifier device_id is
-            assumed to already be connected to this instance.
-        device_id (str): SHFSG device identifier, e.g. `dev12050` or'shf-dev12050'
-        channel_index (int): index specifying which sequencer to enable - there
-            is one sequencer per channel
-        enable (int): enables the sine generator output
-        osc_index (int): selects which oscillator to use
-        osc_frequency (float): oscillator frequency used by the sine generator
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which sequencer to enable - there
+            is one sequencer per channel.
+        enable: Enables the sine generator output.
+        osc_index: Selects which oscillator to use.
+        osc_frequency: Oscillator frequency used by the sine generator.
             (default = 100e6)
-        phase (float): sets the oscillator phase. (default = 0.0)
-        gains (tuple): sets the four amplitudes used for single sideband
+        phase: Sets the oscillator phase. (default = 0.0)
+        gains: Sets the four amplitudes used for single sideband.
             generation. default values correspond to upper sideband with a
             positive oscillator frequency. gains are set in this order:
             I/sin, I/cos, Q/sin, Q/cos
             (default = (0.0, 1.0, 1.0, 0.0))
-        sine_generator_index (int): selects which sine generator to use on a given channel
+        sine_generator_index: Selects which sine generator to use on a given
+            channel.
     """
 
     path = f"/{device_id}/sgchannels/{channel_index}/sines/{sine_generator_index}/"

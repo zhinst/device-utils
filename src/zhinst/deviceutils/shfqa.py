@@ -6,23 +6,21 @@ import time
 
 import numpy as np
 from zhinst.utils import wait_for_state_change
+from zhinst.ziPython import AwgModule, ziDAQServer
 
 SHFQA_MAX_SIGNAL_GENERATOR_WAVEFORM_LENGTH = 4 * 2 ** 10
 SHFQA_MAX_SIGNAL_GENERATOR_CARRIER_COUNT = 16
 SHFQA_SAMPLING_FREQUENCY = 2e9
 
 
-def max_qubits_per_channel(daq, device_id) -> int:
+def max_qubits_per_channel(daq: ziDAQServer, device_id: str) -> int:
     """Returns the maximum number of supported qubits per channel.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
     """
 
     features_path = f"/{device_id}/features/"
@@ -35,33 +33,28 @@ def max_qubits_per_channel(daq, device_id) -> int:
 
 
 def load_sequencer_program(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
     sequencer_program: str,
-    awg_module=None,
+    *,
+    awg_module: AwgModule = None,
     timeout: float = 10,
 ) -> None:
     """Compiles and loads a program to a specified sequencer.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying to which sequencer the program below
-                           is uploaded - there is one sequencer per channel
-
-      sequencer_program (str): sequencer program to be uploaded
-
-      awg_module (AwgModule): awg module instance used to interact with the sequencer. If none
-                              is provided, a new local instance will be created
-
-      timeout (float): maximum time to wait for the compilation on the device in seconds
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying to which sequencer the program below is
+            uploaded - there is one sequencer per channel.
+        sequencer_program: Sequencer program to be uploaded.
+        awg_module: AWG module instance used to interact with the sequencer. If
+            none is provided, a new local instance will be created.
+        timeout: Maximum time to wait for the compilation on the device in
+            seconds.
     """
 
     # start by resetting the sequencer
@@ -130,8 +123,9 @@ def load_sequencer_program(
 
 
 def configure_scope(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
+    *,
     input_select: dict,
     num_samples: int,
     trigger_input: str,
@@ -141,34 +135,25 @@ def configure_scope(
 ) -> None:
     """Configures the scope for a measurement.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      input_select (dict): keys (int) map a specific scope channel with a signal source (str),
-                           e.g. "channel0_signal_input". For a list of available values use
-                           daq.help(f"/{device_id}/scopes/0/channels/0/inputselect")
-
-      trigger_input (str): specifies the trigger source of the scope acquisition
-                           - if set to None, the self-triggering mode of the scope becomes
-                           active, which is useful e.g. for the GUI.
-                           For a list of available trigger values use
-                           daq.help(f"/{device_id}/scopes/0/trigger/channel")
-
-      num_segments (int): number of distinct scope shots to be returned after ending the
-                            acquisition
-
-      num_averages (int): specifies how many times each segment should be averaged on
-                            hardware; to finish a scope acquisition, the number of issued
-                            triggers must be equal to num_segments * num_averages
-
-      trigger_delay (int): delay in samples specifying the time between the start of data
-                             acquisition and reception of a trigger
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        input_select: Keys (int) map a specific scope channel with a signal
+            source (str), e.g. "channel0_signal_input". For a list of available
+            values use daq.help(f"/{device_id}/scopes/0/channels/0/inputselect").
+        trigger_input: Specifies the trigger source of the scope acquisition
+            - if set to None, the self-triggering mode of the scope becomes
+            active, which is useful e.g. for the GUI. For a list of available
+            trigger values use daq.help(f"/{device_id}/scopes/0/trigger/channel").
+        num_segments: Number of distinct scope shots to be returned after ending
+            the acquisition.
+        num_averages: Specifies how many times each segment should be averaged
+            on hardware; to finish a scope acquisition, the number of issued
+            triggers must be equal to num_segments * num_averages.
+        trigger_delay: Delay in samples specifying the time between the start of
+            data acquisition and reception of a trigger.
     """
     scope_path = f"/{device_id}/scopes/0/"
     settings = []
@@ -205,34 +190,28 @@ def configure_scope(
     daq.set(settings)
 
 
-def get_scope_data(daq, device_id: str, time_out: float = 1.0) -> tuple:
-    """Queries the scope for data once it has been triggered and finished the acquisition.
+def get_scope_data(daq: ziDAQServer, device_id: str, *, timeout: float = 1.0) -> tuple:
+    """Queries the scope for data once it is finished.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      time_out (optional float): maximum time to wait for the scope data in seconds
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        timeout: Maximum time to wait for the scope data in seconds.
 
     Returns:
-
-      Three-element tuple with:
-
-      recorded_data (array): contains an array per scope channel with the recorded data
-
-      recorded_data_range (array): full scale range of each scope channel
-
-      scope_time (array): relative acquisition time for each point in recorded_data in
-                          seconds starting from 0
-
+        Three-element tuple with:
+            * recorded_data (array): Contains an array per scope channel with
+                the recorded data.
+            * recorded_data_range (array): Full scale range of each scope
+                channel.
+            * scope_time (array): Relative acquisition time for each point in
+                recorded_data in seconds starting from 0.
     """
 
     # wait until scope has been triggered
-    wait_for_state_change(daq, f"/{device_id}/scopes/0/enable", 0, timeout=time_out)
+    wait_for_state_change(daq, f"/{device_id}/scopes/0/enable", 0, timeout=timeout)
 
     # read and post-process the recorded data
     recorded_data = [[], [], [], []]
@@ -265,23 +244,20 @@ def get_scope_data(daq, device_id: str, time_out: float = 1.0) -> tuple:
     return recorded_data, recorded_data_range, scope_time
 
 
-def enable_sequencer(daq, device_id: str, channel_index: int, single: int) -> None:
+def enable_sequencer(
+    daq: ziDAQServer, device_id: str, channel_index: int, *, single: int
+) -> None:
     """Starts the sequencer of a specific channel.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying which sequencer to enable - there is one
-                           sequencer per channel
-
-      single (int): 1 - disable sequencer after finishing execution
-                    0 - restart sequencer after finishing execution
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which sequencer to enable - there is one
+            sequencer per channel.
+        single: 1 - Disable sequencer after finishing execution.
+                0 - Restart sequencer after finishing execution.
     """
     generator_path = f"/{device_id}/qachannels/{channel_index}/generator/"
     daq.setInt(
@@ -293,32 +269,27 @@ def enable_sequencer(daq, device_id: str, channel_index: int, single: int) -> No
 
 
 def write_to_waveform_memory(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
     waveforms: dict,
+    *,
     clear_existing: bool = True,
 ) -> None:
     """Writes pulses to the waveform memory of a specified generator.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying which generator the waveforms below
-                           are written to - there is one generator per channel
-
-      waveforms (dict): dictionary of waveforms, the key specifies the slot to which
-                        to write the value which is a complex array containing the
-                        waveform samples
-
-      clear_existing (optional bool): specify whether to clear the waveform memory
-                                      before the present upload
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which generator the waveforms below are
+            written to - there is one generator per channel.
+        waveforms: Dictionary of waveforms, the key specifies the slot to which
+            to write the value which is a complex array containing the waveform
+            samples.
+        clear_existing: Specify whether to clear the waveform memory before the
+            present upload.
     """
     waveforms_path = f"/{device_id}/qachannels/{channel_index}/generator/waveforms/"
     settings = []
@@ -335,25 +306,26 @@ def write_to_waveform_memory(
 
 
 def start_continuous_sw_trigger(
-    daq, device_id: str, num_triggers: int, wait_time: float
+    daq: ziDAQServer, device_id: str, *, num_triggers: int, wait_time: float
 ) -> None:
-    """Issues a specified number of software triggers with a certain wait time in between.
-    The function guarantees reception and proper processing of all triggers by the device,
-    but the time between triggers is non-deterministic by nature of software triggering.
-    Only use this function for prototyping and/or cases without strong timing requirements.
+    """Issues a specified number of software triggers
 
-    Arguments:
+    Issues a specified number of software triggers with a certain wait time in
+    between. The function guarantees reception and proper processing of all
+    triggers by the device, but the time between triggers is non-deterministic
+    by nature of software triggering.
 
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
+    Warning:
+        Only use this function for prototyping and/or cases without strong
+        timing requirements.
 
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      num_triggers (int): number of triggers to be issued
-
-      wait_time (float): time between triggers in seconds
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        num_triggers: Number of triggers to be issued.
+        wait_time: Time between triggers in seconds.
     """
 
     min_wait_time = 0.02
@@ -365,18 +337,15 @@ def start_continuous_sw_trigger(
         time.sleep(wait_time)
 
 
-def enable_scope(daq, device_id: str, single: int) -> None:
+def enable_scope(daq: ziDAQServer, device_id: str, *, single: int) -> None:
     """Enables the scope.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      single (int): 0 = continuous mode, 1 = single-shot
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        single: 0 = continuous mode, 1 = single-shot.
     """
 
     daq.setInt(f"/{device_id}/scopes/0/single", single)
@@ -390,37 +359,31 @@ def enable_scope(daq, device_id: str, single: int) -> None:
 
 
 def configure_weighted_integration(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
+    *,
     weights: dict,
     integration_delay: float = 0.0,
     clear_existing: bool = True,
 ) -> None:
     """Configures the weighted integration on a specified channel.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying which group of integration units
-                           the integration weights should be uploaded to - each
-                           channel is associated with a number of integration
-                           units that depend on available device options. Please
-                           refer to the SHFQA manual for more details
-
-      weights (dict): dictionary containing the complex weight vectors, where keys
-                      correspond to the indices of the integration units to be configured
-
-      integration_delay (optional float): delay in seconds before starting readout
-
-      clear_existing (optional bool): specify whether to set all the integration weights
-                                      to zero before proceeding with the present upload
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which group of integration units the
+            integration weights should be uploaded to - each channel is
+            associated with a number of integration units that depend on
+            available device options. Please refer to the SHFQA manual for more
+            details.
+        weights: Dictionary containing the complex weight vectors, where keys
+            correspond to the indices of the integration units to be configured.
+        integration_delay: Delay in seconds before starting readout.
+        clear_existing: Specify whether to set all the integration weights to
+            zero before proceeding with the present upload.
     """
 
     assert len(weights) > 0, "'weights' cannot be empty."
@@ -448,33 +411,27 @@ def configure_weighted_integration(
 
 
 def configure_result_logger_for_spectroscopy(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
+    *,
     result_length: int,
     num_averages: int = 1,
     averaging_mode: int = 0,
 ) -> None:
     """Configures a specified result logger for spectroscopy mode.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying which result logger to configure - there is one
-                           result logger per channel
-
-      result_length (int): number of results to be returned by the result logger
-
-      num_averages (optional int): number of averages, will be rounded to 2^n
-
-      averaging_mode (optional int): select the averaging order of the result, with 0 = cyclic
-                                     and 1 = sequential.
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which result logger to configure - there
+            is one result logger per channel.
+        result_length: Number of results to be returned by the result logger
+        num_averages: Number of averages, will be rounded to 2^n.
+        averaging_mode: Select the averaging order of the result, with
+            0 = cyclic and 1 = sequential.
     """
 
     result_path = f"/{device_id}/qachannels/{channel_index}/spectroscopy/result/"
@@ -488,9 +445,10 @@ def configure_result_logger_for_spectroscopy(
 
 
 def configure_result_logger_for_readout(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
+    *,
     result_source: str,
     result_length: int,
     num_averages: int = 1,
@@ -498,28 +456,19 @@ def configure_result_logger_for_readout(
 ) -> None:
     """Configures a specified result logger for readout mode.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying which result logger to configure - there is one
-                           result logger per channel
-
-      result_source (str): string-based tag to select the result source
-                           in readout mode, e.g. "result_of_integration"
-                           or "result_of_discrimination".
-
-      result_length (int): number of results to be returned by the result logger
-
-      num_averages (optional int): number of averages, will be rounded to 2^n
-
-      averaging_mode (optional int): select the averaging order of the result, with 0 = cyclic
-                                     and 1 = sequential.
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which result logger to configure - there
+            is one result logger per channel.
+        result_source: String-based tag to select the result source in readout
+            mode, e.g. "result_of_integration" or "result_of_discrimination".
+        result_length: Number of results to be returned by the result logger.
+        num_averages: Number of averages, will be rounded to 2^n.
+        averaging_mode: Select the averaging order of the result, with
+            0 = cyclic and 1 = sequential.
     """
 
     result_path = f"/{device_id}/qachannels/{channel_index}/readout/result/"
@@ -533,22 +482,19 @@ def configure_result_logger_for_readout(
     daq.set(settings)
 
 
-def enable_result_logger(daq, device_id: str, channel_index: int, mode: str) -> None:
+def enable_result_logger(
+    daq: ziDAQServer, device_id: str, channel_index: int, *, mode: str
+) -> None:
     """Resets and enables a specified result logger.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying which result logger to enable - there is one
-                           result logger per channel
-
-      mode (str): select between "spectroscopy" and "readout" mode.
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which result logger to enable - there is
+            one result logger per channel.
+        mode: Select between "spectroscopy" and "readout" mode.
     """
 
     enable_path = f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable"
@@ -561,36 +507,36 @@ def enable_result_logger(daq, device_id: str, channel_index: int, mode: str) -> 
 
 
 def get_result_logger_data(
-    daq, device_id: str, channel_index: int, mode: str, time_out: float = 1.0
+    daq: ziDAQServer,
+    device_id: str,
+    channel_index: int,
+    *,
+    mode: str,
+    timeout: float = 1.0,
 ) -> np.array:
-    """Waits until a specified result logger finished recording and returns the measured data.
+    """Return the measured data of a specified result logger.
 
-    Arguments:
+    Blocks untils the specified result logger is finished.
 
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying which result logger to query results from - there
-                           is one result logger per channel
-
-      mode (str): select between "spectroscopy" and "readout" mode.
-
-      time_out (optional float): maximum time to wait for data in seconds
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which result logger to query results
+            from - there is one result logger per channel.
+        mode: Select between "spectroscopy" and "readout" mode.
+        timeout: Maximum time to wait for data in seconds.
 
     Returns:
-
-      result (array): array containing the result logger data
-
+        Array containing the result logger data.
     """
 
     wait_for_state_change(
         daq,
         f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable",
         0,
-        timeout=time_out,
+        timeout=timeout,
     )
 
     data = daq.get(
@@ -603,9 +549,10 @@ def get_result_logger_data(
 
 
 def configure_channel(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
+    *,
     input_range: int,
     output_range: int,
     center_frequency: float,
@@ -613,24 +560,16 @@ def configure_channel(
 ) -> None:
     """Configures the RF input and output of a specified channel.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying which channel to configure
-
-      input_range (int): maximal range of the signal input power in dbM
-
-      output_range (int): maximal range of the signal output power in dbM
-
-      center_frequency (float): center Frequency of the analysis band
-
-      mode (str): select between "spectroscopy" and "readout" mode.
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying which channel to configure.
+        input_range: Maximal range of the signal input power in dbM.
+        output_range: Maximal range of the signal output power in dbM.
+        center_frequency: Center Frequency of the analysis band.
+        mode: Select between "spectroscopy" and "readout" mode.
     """
 
     path = f"/{device_id}/qachannels/{channel_index}/"
@@ -645,31 +584,26 @@ def configure_channel(
 
 
 def configure_sequencer_triggering(
-    daq,
+    daq: ziDAQServer,
     device_id: str,
     channel_index: int,
+    *,
     aux_trigger: str,
     play_pulse_delay: float = 0.0,
 ) -> None:
     """Configures the triggering of a specified sequencer.
 
-    Arguments:
-
-      daq (ziDAQServer): instance of a Zurich Instruments API session connected to a Data Server.
-                         The device with identifier device_id is assumed to already be
-                         connected to this instance.
-
-      device_id (str): SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'
-
-      channel_index (int): index specifying on which sequencer to configure the
-                           triggering - there is one sequencer per channel
-
-      aux_trigger (string): alias for the trigger used in the sequencer.
-                            For a list of available values use
-                            daq.help(f"/{device_id}/qachannels/0/generator/auxtriggers/0/channel")
-
-      play_pulse_delay (optional float): delay in seconds before the start of waveform playback
-
+    Args:
+        daq: Instance of a Zurich Instruments API session connected to a Data
+            Server. The device with identifier device_id is assumed to already
+            be connected to this instance.
+        device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
+        channel_index: Index specifying on which sequencer to configure the
+            triggering - there is one sequencer per channel.
+        aux_trigger: Alias for the trigger used in the sequencer. For a list of
+            available values use.
+            daq.help(f"/{device_id}/qachannels/0/generator/auxtriggers/0/channel")
+        play_pulse_delay: Delay in seconds before the start of waveform playback.
     """
 
     daq.setString(
