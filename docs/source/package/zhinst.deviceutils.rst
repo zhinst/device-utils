@@ -6,5 +6,6 @@
 .. autosummary::
    :toctree:
 
-   zhinst.deviceutils.SHFQA
+   zhinst.deviceutils.shfqa
+   zhinst.deviceutils.shfsg
 

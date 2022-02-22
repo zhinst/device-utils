@@ -12,7 +12,7 @@
       :toctree:
       :recursive:
    {% for item in methods %}
-      {{ name }}.{{ item }}
+      ~{{ name }}.{{ item }}
    {%- endfor %}
 
    {% endif %}
