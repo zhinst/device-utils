@@ -23,13 +23,7 @@ def max_qubits_per_channel(daq: ziDAQServer, device_id: str) -> int:
         device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
     """
 
-    features_path = f"/{device_id}/features/"
-    device_type = daq.getString(features_path + "devtype")
-    options = daq.getString(features_path + "options")
-
-    if device_type == "SHFQA4" or "16W" in options:
-        return 16
-    return 8
+    return len(daq.listNodes(f"/{device_id}/qachannels/0/readout/integration/weights"))
 
 
 def load_sequencer_program(
