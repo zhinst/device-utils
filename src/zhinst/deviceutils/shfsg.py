@@ -125,7 +125,8 @@ def enable_sequencer(
         int(single),
     )
     daq.syncSetInt(sequencer_path + "enable", 1)
-    wait_for_state_change(daq, sequencer_path + "enable", 1)
+    hundred_milliseconds = 0.1
+    time.sleep(hundred_milliseconds)
 
 
 def upload_commandtable(

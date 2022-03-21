@@ -266,7 +266,8 @@ def enable_sequencer(
         single,
     )
     daq.syncSetInt(generator_path + "enable", 1)
-    wait_for_state_change(daq, generator_path + "enable", 1)
+    hundred_milliseconds = 0.1
+    time.sleep(hundred_milliseconds)
 
 
 def write_to_waveform_memory(
