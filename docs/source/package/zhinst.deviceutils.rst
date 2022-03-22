@@ -8,4 +8,5 @@
 
    zhinst.deviceutils.shfqa
    zhinst.deviceutils.shfsg
+   zhinst.deviceutils.shfqc
 

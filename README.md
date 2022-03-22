@@ -15,6 +15,7 @@ seperat layer above ``zhinst.ziPython`` but rather as an addition.
 It currently has utility functions for the following devices:
 * SHFQA
 * SHFSG
+* SHFQC
 
 To see the device utils in action check out the
 [LabOne API examples](https://github.com/zhinst/labone-api-examples).
@@ -29,9 +30,11 @@ pip install zhinst-deviceutils
 ```
 import zhinst.deviceutils.shfqa
 import zhinst.deviceutils.shfsg
+import zhinst.deviceutils.shfqc
 
 help(zhinst.deviceutils.shfqa)
 help(zhinst.deviceutils.shfsg)
+help(zhinst.deviceutils.shfqc)
 ```
 
 ## About

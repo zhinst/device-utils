@@ -27,7 +27,7 @@ def load_sequencer_program(
             Server. The device with identifier device_id is assumed to already
             be connected to this instance.
         device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
-        channel_index: Index specifying which sequencer to enable - there
+        channel_index: Index specifying which sequencer to upload - there
             is one sequencer per channel.
         sequencer_program: Sequencer program to be uploaded.
         awg_module: AWG module instance used to interact with the
@@ -166,8 +166,8 @@ def write_to_waveform_memory(
             Server. The device with identifier device_id is assumed to already
             be connected to this instance.
         device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
-        channel_index: Index specifying which sequencer to enable - there
-            is one sequencer per channel.
+        channel_index: Index specifying which sequencer the waveforms below are
+            written to - there is one generator per channel.
         waveforms (dict): Dictionary of waveforms, the key specifies the
             waveform index to which to write the waveforms.
 
@@ -198,8 +198,7 @@ def configure_marker_and_trigger(
             Server. The device with identifier device_id is assumed to already
             be connected to this instance.
         device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'
-        channel_index: Index specifying which sequencer to enable - there
-            is one sequencer per channel.
+        channel_index: Index of the used SG channel.
         trigger_in_source: Alias for the trigger input used by the
             sequencer. For a list of available values use:
             daq.help(f"/{dev_id}/sgchannels/{channel_index}/awg/auxtriggers/0/channel")
@@ -253,8 +252,7 @@ def configure_channel(
             Server. The device with identifier device_id is assumed to already
             be connected to this instance.
         device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
-        channel_index: Index specifying which sequencer to enable - there
-            is one sequencer per channel.
+        channel_index: Index of the used SG channel.
         output_range: Maximal range of the signal output power in dbM.
         center_frequency: Center Frequency before modulation.
         rflf_path: Switch between RF and LF paths.
@@ -300,8 +298,7 @@ def configure_pulse_modulation(
             Server. The device with identifier device_id is assumed to already
             be connected to this instance.
         device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'
-        channel_index: Index specifying which sequencer to enable - there
-            is one sequencer per channel.
+        channel_index: Index of the used SG channel.
         enable: Enables modulation.
         osc_index: Selects which oscillator to use.
         osc_frequency: Oscillator frequency used to modulate the AWG
@@ -353,8 +350,7 @@ def configure_sine_generation(
             Server. The device with identifier device_id is assumed to already
             be connected to this instance.
         device_id: SHFSG device identifier, e.g. `dev12004` or 'shf-dev12004'.
-        channel_index: Index specifying which sequencer to enable - there
-            is one sequencer per channel.
+        channel_index: Index of the used SG channel.
         enable: Enables the sine generator output.
         osc_index: Selects which oscillator to use.
         osc_frequency: Oscillator frequency used by the sine generator.
