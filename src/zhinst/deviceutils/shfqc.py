@@ -224,8 +224,7 @@ def get_scope_data(daq: ziDAQServer, device_id: str, *, timeout: float = 1.0) ->
 def start_continuous_sw_trigger(
     daq: ziDAQServer, device_id: str, *, num_triggers: int, wait_time: float
 ) -> None:
-    """Issues a specified number of software triggers
-
+    """
     Issues a specified number of software triggers with a certain wait time in
     between. The function guarantees reception and proper processing of all
     triggers by the device, but the time between triggers is non-deterministic
@@ -249,8 +248,11 @@ def start_continuous_sw_trigger(
     )
 
 
-def enable_scope(daq: ziDAQServer, device_id: str, *, single: int) -> None:
-    """Enables the scope.
+def enable_scope(
+    daq: ziDAQServer, device_id: str, *, single: int, acknowledge_timeout: float = 1.0
+) -> None:
+    """Resets and enables the scope. Blocks until the host has received the enable
+    acknowledgment from the device.
 
     Args:
         daq: Instance of a Zurich Instruments API session connected to a Data
@@ -258,9 +260,13 @@ def enable_scope(daq: ziDAQServer, device_id: str, *, single: int) -> None:
             be connected to this instance.
         device_id: SHFQC device identifier, e.g. `dev12004` or 'shf-dev12004'.
         single: 0 = continuous mode, 1 = single-shot.
+        acknowledge_timeout: Maximum time to wait for diverse acknowledgments
+            in the implementation.
     """
 
-    return shfqa.enable_scope(daq, device_id, single=single)
+    return shfqa.enable_scope(
+        daq, device_id, single=single, acknowledge_timeout=acknowledge_timeout
+    )
 
 
 def configure_weighted_integration(
@@ -361,8 +367,11 @@ def configure_result_logger_for_readout(
     )
 
 
-def enable_result_logger(daq: ziDAQServer, device_id: str, *, mode: str) -> None:
-    """Resets and enables a specified result logger.
+def enable_result_logger(
+    daq: ziDAQServer, device_id: str, *, mode: str, acknowledge_timeout: float = 1.0
+) -> None:
+    """Resets and enables a specified result logger. Blocks until the host has
+    received the enable acknowledgment from the device.
 
     Args:
         daq: Instance of a Zurich Instruments API session connected to a Data
@@ -370,9 +379,12 @@ def enable_result_logger(daq: ziDAQServer, device_id: str, *, mode: str) -> None
             be connected to this instance.
         device_id: SHFQC device identifier, e.g. `dev12004` or 'shf-dev12004'.
         mode: Select between "spectroscopy" and "readout" mode.
+        acknowledge_timeout: Maximum time to wait for diverse acknowledgments in the implementation.
     """
 
-    return shfqa.enable_result_logger(daq, device_id, 0, mode=mode)
+    return shfqa.enable_result_logger(
+        daq, device_id, 0, mode=mode, acknowledge_timeout=acknowledge_timeout
+    )
 
 
 def get_result_logger_data(

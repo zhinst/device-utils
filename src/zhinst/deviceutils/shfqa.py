@@ -331,8 +331,11 @@ def start_continuous_sw_trigger(
         time.sleep(wait_time)
 
 
-def enable_scope(daq: ziDAQServer, device_id: str, *, single: int) -> None:
-    """Enables the scope.
+def enable_scope(
+    daq: ziDAQServer, device_id: str, *, single: int, acknowledge_timeout: float = 1.0
+) -> None:
+    """Resets and enables the scope. Blocks until the host has received the
+    enable acknowledgment from the device.
 
     Args:
         daq: Instance of a Zurich Instruments API session connected to a Data
@@ -340,6 +343,8 @@ def enable_scope(daq: ziDAQServer, device_id: str, *, single: int) -> None:
             be connected to this instance.
         device_id: SHFQA device identifier, e.g. `dev12004` or 'shf-dev12004'.
         single: 0 = continuous mode, 1 = single-shot.
+        acknowledge_timeout: Maximum time to wait for diverse acknowledgments
+            in the implementation.
     """
 
     daq.setInt(f"/{device_id}/scopes/0/single", single)
@@ -347,9 +352,9 @@ def enable_scope(daq: ziDAQServer, device_id: str, *, single: int) -> None:
     path = f"/{device_id}/scopes/0/enable"
     if daq.getInt(path) == 1:
         daq.syncSetInt(path, 0)
-        wait_for_state_change(daq, path, 0)
+        wait_for_state_change(daq, path, 0, timeout=acknowledge_timeout)
     daq.syncSetInt(path, 1)
-    wait_for_state_change(daq, path, 1)
+    wait_for_state_change(daq, path, 1, timeout=acknowledge_timeout)
 
 
 def configure_weighted_integration(
@@ -472,9 +477,15 @@ def configure_result_logger_for_readout(
 
 
 def enable_result_logger(
-    daq: ziDAQServer, device_id: str, channel_index: int, *, mode: str
+    daq: ziDAQServer,
+    device_id: str,
+    channel_index: int,
+    *,
+    mode: str,
+    acknowledge_timeout: float = 1.0,
 ) -> None:
-    """Resets and enables a specified result logger.
+    """Resets and enables a specified result logger. Blocks until the host has
+    received the enable acknowledgment from the device.
 
     Args:
         daq: Instance of a Zurich Instruments API session connected to a Data
@@ -484,15 +495,17 @@ def enable_result_logger(
         channel_index: Index specifying which result logger to enable - there is
             one result logger per channel.
         mode: Select between "spectroscopy" and "readout" mode.
+        acknowledge_timeout: Maximum time to wait for diverse acknowledgments in
+            the implementation.
     """
 
     enable_path = f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable"
     # reset the result logger if some old measurement is still running
     if daq.getInt(enable_path) != 0:
         daq.syncSetInt(enable_path, 0)
-        wait_for_state_change(daq, enable_path, 0)
+        wait_for_state_change(daq, enable_path, 0, timeout=acknowledge_timeout)
     daq.syncSetInt(enable_path, 1)
-    wait_for_state_change(daq, enable_path, 1)
+    wait_for_state_change(daq, enable_path, 1, timeout=acknowledge_timeout)
 
 
 def get_result_logger_data(
