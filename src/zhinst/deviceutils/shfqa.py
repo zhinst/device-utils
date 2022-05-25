@@ -500,12 +500,22 @@ def enable_result_logger(
     """
 
     enable_path = f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable"
+
     # reset the result logger if some old measurement is still running
     if daq.getInt(enable_path) != 0:
         daq.syncSetInt(enable_path, 0)
         wait_for_state_change(daq, enable_path, 0, timeout=acknowledge_timeout)
+
+    # enable the result logger
     daq.syncSetInt(enable_path, 1)
-    wait_for_state_change(daq, enable_path, 1, timeout=acknowledge_timeout)
+
+    try:
+        wait_for_state_change(daq, enable_path, 1, timeout=acknowledge_timeout)
+    except TimeoutError as error:
+        raise TimeoutError(
+            f"Failed to enable the result logger for {mode} mode. "
+            f"Please make sure that the QA channel mode is set to {mode}."
+        ) from error
 
 
 def get_result_logger_data(
@@ -534,12 +544,18 @@ def get_result_logger_data(
         Array containing the result logger data.
     """
 
-    wait_for_state_change(
-        daq,
-        f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable",
-        0,
-        timeout=timeout,
-    )
+    try:
+        wait_for_state_change(
+            daq,
+            f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable",
+            0,
+            timeout=timeout,
+        )
+    except TimeoutError as error:
+        raise TimeoutError(
+            "The result logger is still running. "
+            "This usually indicates that it did not receive the expected number of triggers."
+        ) from error
 
     data = daq.get(
         f"/{device_id}/qachannels/{channel_index}/{mode}/result/data/*/wave",
