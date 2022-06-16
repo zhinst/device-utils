@@ -8,7 +8,7 @@ import numpy as np
 from zhinst.utils import wait_for_state_change
 from zhinst.ziPython import AwgModule, ziDAQServer
 
-SHFQA_MAX_SIGNAL_GENERATOR_WAVEFORM_LENGTH = 4 * 2**10
+SHFQA_MAX_SIGNAL_GENERATOR_WAVEFORM_LENGTH = 4 * 2 ** 10
 SHFQA_MAX_SIGNAL_GENERATOR_CARRIER_COUNT = 16
 SHFQA_SAMPLING_FREQUENCY = 2e9
 
