@@ -345,6 +345,8 @@ def enable_scope(
         single: 0 = continuous mode, 1 = single-shot.
         acknowledge_timeout: Maximum time to wait for diverse acknowledgments
             in the implementation.
+
+            .. versionadded:: 0.2.0
     """
 
     daq.setInt(f"/{device_id}/scopes/0/single", single)
@@ -497,6 +499,8 @@ def enable_result_logger(
         mode: Select between "spectroscopy" and "readout" mode.
         acknowledge_timeout: Maximum time to wait for diverse acknowledgments in
             the implementation.
+
+            .. versionadded:: 0.2.0
     """
 
     enable_path = f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable"
