@@ -162,7 +162,7 @@ def configure_scope(
     trigger_input: str,
     num_segments: int = 1,
     num_averages: int = 1,
-    trigger_delay: int = 0,
+    trigger_delay: float = 0.0,
 ) -> None:
     """Configures the scope for a measurement.
 
