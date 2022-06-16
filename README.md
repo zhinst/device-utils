@@ -9,8 +9,8 @@ zhinst-deviceutils provides a set of helper functions for the native LabOne Pyth
 called [zhinst.ziPython](https://pypi.org/project/zhinst/).
 
 It offers higher level functions to ease the communication with
-[Zurich Instruments](https://zhinst.com) devices. It is not intendet to be a
-seperat layer above ``zhinst.ziPython`` but rather as an addition.
+[Zurich Instruments](https://zhinst.com) devices. It is not intended to be a
+seperate layer above ``zhinst.ziPython`` but rather as an addition.
 
 It currently has utility functions for the following devices:
 * SHFQA
@@ -40,6 +40,6 @@ help(zhinst.deviceutils.shfqc)
 ## About
 
 More information about programming with Zurich Instruments devices is available in the
-[package documentation](http://docs.pages.zhinst.com/manuals/zhinst-deviceutils/index.html)
+[package documentation](https://docs.zhinst.com/zhinst-deviceutils/en/latest/)
 and the
 [LabOne Programming Manual](https://docs.zhinst.com/labone_programming_manual/overview.html).
