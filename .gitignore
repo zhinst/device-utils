@@ -2,11 +2,13 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.vscode/
 
 # Distribution / packaging
 dist/
 *.egg-info/
 _version.py
+build/
 
 #db, web
 .DS_Store
