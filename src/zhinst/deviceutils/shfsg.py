@@ -3,6 +3,7 @@ Zurich Instruments LabOne Python API Utility functions for SHFSG.
 """
 
 import time
+import typing as t
 
 from zhinst.utils import convert_awg_waveform, wait_for_state_change
 from zhinst.ziPython import AwgModule, ziDAQServer
@@ -106,7 +107,7 @@ def enable_sequencer(
     device_id: str,
     channel_index: int,
     *,
-    single: bool = True,
+    single: t.Union[bool, int] = True,
 ) -> None:
     """Starts the sequencer of a specific channel.
 

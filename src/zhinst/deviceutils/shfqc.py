@@ -382,7 +382,7 @@ def enable_result_logger(
         device_id: SHFQC device identifier, e.g. `dev12004` or 'shf-dev12004'.
         mode: Select between "spectroscopy" and "readout" mode.
         acknowledge_timeout: Maximum time to wait for diverse acknowledgments in the implementation.
-        
+
             .. versionadded:: 0.2.0
     """
 
