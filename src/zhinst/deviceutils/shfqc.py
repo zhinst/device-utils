@@ -263,7 +263,7 @@ def enable_scope(
         acknowledge_timeout: Maximum time to wait for diverse acknowledgments
             in the implementation.
 
-            .. versionadded:: 0.2.0
+            .. versionadded:: 0.1.1
     """
 
     return shfqa.enable_scope(
@@ -383,7 +383,7 @@ def enable_result_logger(
         mode: Select between "spectroscopy" and "readout" mode.
         acknowledge_timeout: Maximum time to wait for diverse acknowledgments in the implementation.
 
-            .. versionadded:: 0.2.0
+            .. versionadded:: 0.1.1
     """
 
     return shfqa.enable_result_logger(

@@ -346,7 +346,7 @@ def enable_scope(
         acknowledge_timeout: Maximum time to wait for diverse acknowledgments
             in the implementation.
 
-            .. versionadded:: 0.2.0
+            .. versionadded:: 0.1.1
     """
 
     daq.setInt(f"/{device_id}/scopes/0/single", single)
@@ -500,7 +500,7 @@ def enable_result_logger(
         acknowledge_timeout: Maximum time to wait for diverse acknowledgments in
             the implementation.
 
-            .. versionadded:: 0.2.0
+            .. versionadded:: 0.1.1
     """
 
     enable_path = f"/{device_id}/qachannels/{channel_index}/{mode}/result/enable"

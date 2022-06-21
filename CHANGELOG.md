@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.2
+## Version 0.1.1
 * SHFQC utils added
 * Added ``acknowledge_timeout`` argument to
   *  ``shfqa.enable_scope``
