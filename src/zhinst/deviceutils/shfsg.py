@@ -203,7 +203,7 @@ def configure_marker_and_trigger(
         trigger_in_source: Alias for the trigger input used by the
             sequencer. For a list of available values use:
             daq.help(f"/{dev_id}/sgchannels/{channel_index}/awg/auxtriggers/0/channel")
-        tringger_in_slope: Alias for the slope of the input trigger used
+        trigger_in_slope: Alias for the slope of the input trigger used
             by sequencer. For a list of available values use
             daq.help(f"/{dev_id}/sgchannels/{channel_index}/awg/auxtriggers/0/slope")
         marker_out_source: Alias for the marker output source used by the

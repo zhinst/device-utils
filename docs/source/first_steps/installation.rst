@@ -5,7 +5,7 @@ Python version
 --------------
 
 We recommend using the latest version of Python. zhinst-deviceutils supports Python
-3.6 and newer.
+3.7 and newer.
 
 Dependencies
 ------------

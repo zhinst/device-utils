@@ -10,7 +10,7 @@ called [zhinst.ziPython](https://pypi.org/project/zhinst/).
 
 It offers higher level functions to ease the communication with
 [Zurich Instruments](https://zhinst.com) devices. It is not intended to be a
-seperate layer above ``zhinst.ziPython`` but rather as an addition.
+separate layer above ``zhinst.ziPython`` but rather as an addition.
 
 It currently has utility functions for the following devices:
 * SHFQA

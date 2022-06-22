@@ -400,7 +400,7 @@ def get_result_logger_data(
 ) -> np.array:
     """Return the measured data of a specified result logger.
 
-    Blocks untils the specified result logger is finished.
+    Blocks until the specified result logger is finished.
 
     Args:
         daq: Instance of a Zurich Instruments API session connected to a Data
